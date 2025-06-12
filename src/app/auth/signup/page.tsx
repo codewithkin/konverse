@@ -8,12 +8,15 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 function SignUp() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+
+    const router = useRouter();
 
     const mutation = useMutation({
         mutationFn: async () => {
@@ -22,6 +25,11 @@ function SignUp() {
                 email,
                 password,
                 callbackURL: "/dashboard",
+                fetchOptions: {
+                    onSuccess: () => {
+                        router.push("/auth/success");
+                    }
+                },
             });
 
             if (error) {
@@ -39,7 +47,12 @@ function SignUp() {
             const { data, error } = await authClient.signIn.social({
                 provider: "google",
                 newUserCallbackURL: "/onboarding",
-                callbackURL: "/dashboard"
+                callbackURL: "/dashboard",
+                fetchOptions: {
+                    onSuccess: () => {
+                        router.push("/auth/success");
+                    }
+                },
             });
 
             if (error) {
