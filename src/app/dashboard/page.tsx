@@ -123,6 +123,7 @@ function Dashboard() {
         <section className="relative p-4 sm:p-6 md:p-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Welcome to your Dashboard, {user?.name}!</h2>
 
+            {/* Always show Stat Cards if data is available */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard title="Total Stores" value={userStores?.length || 0} icon={<StoreIcon />} color="purple" />
                 <StatCard title="Total Products" value={totalProducts || 0} icon={<PackageIcon />} color="blue" />
@@ -130,6 +131,7 @@ function Dashboard() {
                 <StatCard title="Low Stock Items" value={lowStockItems || 0} icon={<AlertTriangleIcon />} color="yellow" />
             </div>
 
+            {/* Conditional Quick Start Guide or Product Table */}
             {!hasStores && (
                 <div className="bg-white p-6 rounded-lg shadow-sm text-center mb-8">
                     <h3 className="text-xl font-bold mb-4">Welcome! Let's Get Started!</h3>
@@ -206,15 +208,17 @@ function Dashboard() {
                 </div>
             )}
 
-            {/* Quick Start Guide for all users */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-                <h3 className="text-xl font-bold mb-4">Quick Start Guide</h3>
-                <ol className="list-decimal list-inside space-y-3 text-gray-600">
-                    <li>Go to the <b className="text-green-600">My Products</b> tab to add your items. Use the "✨ Generate Description" button for help!</li>
-                    <li>Visit the <b className="text-green-600">Chat Simulator</b> to ask questions and see how customers will interact with your products.</li>
-                    <li>Share your new business WhatsApp number and start selling!</li>
-                </ol>
-            </div>
+            {/* Quick Start Guide: Only show if user does NOT have both stores AND products */}
+            {(!hasStores || !hasProducts) && (
+                <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+                    <h3 className="text-xl font-bold mb-4">Quick Start Guide</h3>
+                    <ol className="list-decimal list-inside space-y-3 text-gray-600">
+                        <li>Go to the <b className="text-green-600">My Products</b> tab to add your items. Use the "✨ Generate Description" button for help!</li>
+                        <li>Visit the <b className="text-green-600">Chat Simulator</b> to ask questions and see how customers will interact with your products.</li>
+                        <li>Share your new business WhatsApp number and start selling!</li>
+                    </ol>
+                </div>
+            )}
 
             {/* Floating Add New Product Button */}
             <Button
