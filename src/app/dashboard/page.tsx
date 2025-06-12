@@ -43,7 +43,7 @@ function Dashboard() {
     const router = useRouter();
 
     useEffect(() => {
-        if (!user) {
+        if (!user && !isPending) {
             router.replace("/auth/signin");
         }
     }, [user, router]);
