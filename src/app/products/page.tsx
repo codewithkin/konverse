@@ -2,10 +2,11 @@
 
 import { authClient } from "@/lib/auth-client";
 import { useEffect, useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 
 // Shadcn UI components
 import {
@@ -35,12 +36,23 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // --- Icons ---
 const PlusCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus-circle"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>;
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>;
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
-const SortIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-down-up"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>;
+const SortIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-down-up"><path d="m3 16 4 4 4-4" /><path d="M7 20V4" /><path d="m21 8-4-4-4 4" /><path d="M17 4v16" /></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-edit"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>;
 const LoaderIcon = () => <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
@@ -64,6 +76,7 @@ function ProductsPage() {
     const { data, isPending: isSessionLoading } = authClient.useSession();
     const user = data?.user;
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
@@ -92,6 +105,28 @@ function ProductsPage() {
         enabled: !!user?.id,
         placeholderData: [],
     });
+
+    // --- Delete Mutation ---
+    const deleteProductMutation = useMutation<string, Error, string>({
+        mutationFn: async (productId: string) => {
+            const response = await fetch(`/api/products?id=${productId}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to delete product');
+            }
+            return response.text();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['userProducts', user?.id] });
+            toast.success("Product deleted successfully!");
+        },
+        onError: (err) => {
+            toast.error(`Error deleting product: ${err.message}`);
+        },
+    });
+    // --- End Delete Mutation ---
 
     const processedProducts = useMemo(() => {
         let tempProducts = productsData || [];
@@ -128,10 +163,10 @@ function ProductsPage() {
         return Array.from(new Set(productsData?.map(p => p.category).filter(Boolean) || [])) as string[];
     }, [productsData]);
 
-    if (isLoading || isSessionLoading) {
+    if (isLoading || isSessionLoading || deleteProductMutation.isPending) {
         return (
             <section className="flex justify-center items-center h-screen">
-                <LoaderIcon /> Loading products...
+                <LoaderIcon /> {deleteProductMutation.isPending ? 'Deleting product...' : 'Loading products...'}
             </section>
         );
     }
@@ -167,12 +202,13 @@ function ProductsPage() {
                                 setCurrentPage(1);
                             }}
                         />
+                        <SearchIcon />
                     </div>
-                    
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="flex items-center gap-2 w-full md:w-auto shrink-0">
-                                <FilterIcon className="h-5 w-5" /> Category: {filterCategory || 'All'}
+                                <FilterIcon /> Category: {filterCategory || 'All'}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56">
@@ -201,7 +237,7 @@ function ProductsPage() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="flex items-center gap-2 w-full md:w-auto shrink-0">
-                                <SortIcon className="h-5 w-5" /> Sort: {sortOrder === 'most_sales' ? 'Most Sales' : sortOrder === 'least_sales' ? 'Least Sales' : 'Default (Newest)'}
+                                <SortIcon /> Sort: {sortOrder === 'most_sales' ? 'Most Sales' : sortOrder === 'least_sales' ? 'Least Sales' : 'Default (Newest)'}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56">
@@ -236,7 +272,7 @@ function ProductsPage() {
                             {!searchTerm && !filterCategory && sortOrder === 'none' && (
                                 <Link href="/products/new" passHref>
                                     <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center mx-auto transition-colors duration-200">
-                                        <PlusCircleIcon className="mr-2 h-5 w-5" /> Add Your First Product
+                                        <PlusCircleIcon /> Add Your First Product
                                     </Button>
                                 </Link>
                             )}
@@ -292,8 +328,8 @@ function ProductsPage() {
                                                 <Badge
                                                     className={`
                                                         ${product.stock < 5 ? 'bg-red-50 text-red-700 border border-red-200' :
-                                                        product.stock < 10 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-                                                        'bg-green-50 text-green-700 border border-green-200'}
+                                                            product.stock < 10 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                                                                'bg-green-50 text-green-700 border border-green-200'}
                                                         px-2.5 py-1 text-xs font-semibold rounded-full min-w-[70px] text-center
                                                     `}
                                                 >
@@ -305,12 +341,34 @@ function ProductsPage() {
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Button variant="outline" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors duration-150" asChild>
                                                         <Link href={`/products/edit/${product.id}`} aria-label={`Edit ${product.name}`}>
-                                                            <EditIcon className="h-4 w-4" />
+                                                            <EditIcon />
                                                         </Link>
                                                     </Button>
-                                                    <Button variant="destructive" size="icon" className="h-8 w-8 bg-red-500 hover:bg-red-600 text-white transition-colors duration-150" aria-label={`Delete ${product.name}`}>
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </Button>
+                                                    {/* Delete button with AlertDialog for confirmation */}
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="destructive" size="icon" className="h-8 w-8 bg-red-500 hover:bg-red-600 text-white transition-colors duration-150" aria-label={`Delete ${product.name}`}>
+                                                                <TrashIcon />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This action cannot be undone. This will permanently delete your product &quot;{product.name}&quot; and remove its data from our servers.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => deleteProductMutation.mutate(product.id)}
+                                                                    className="bg-red-500 hover:bg-red-600"
+                                                                >
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
