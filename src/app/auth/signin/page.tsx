@@ -20,6 +20,15 @@ function SignIn() {
         {
           email,
           password
+        },
+        {
+          onError: (ctx) => {
+            if (ctx.error.status === 403) {
+              toast.error("Please verify your email address");
+            }
+
+            toast.error(ctx.error.message);
+          },
         }
       );
 
