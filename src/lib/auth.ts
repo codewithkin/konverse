@@ -2,6 +2,7 @@ import prisma from "@/helpers/prisma";
 import {betterAuth} from "better-auth";
 import {prismaAdapter} from "better-auth/adapters/prisma";
 import {sendEmail} from "@/helpers/email";
+import { nextCookies } from "better-auth/next-js";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -9,7 +10,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true
+    requireEmailVerification: true,
   },
   socialProviders: {
     google: {
@@ -36,4 +37,5 @@ export const auth = betterAuth({
       });
     },
   },
+  plugins: [nextCookies()],
 });
