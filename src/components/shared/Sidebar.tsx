@@ -85,6 +85,7 @@ export function Sidebar() {
                 <div className="flex h-14 items-center px-4">
                     <Link
                         href="/"
+                        target="_blank"
                         className="flex items-center gap-2 font-semibold"
                     >
                         <span className={cn(isCollapsed ? "hidden" : "inline")}>
@@ -103,6 +104,7 @@ export function Sidebar() {
                             <Tooltip key={item.id} delayDuration={0}>
                                 <TooltipTrigger asChild>
                                     <Link
+                                        target="_blank"
                                         href={item.href}
                                         className={cn(
                                             "mx-auto flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
@@ -121,6 +123,7 @@ export function Sidebar() {
                             <Link
                                 key={item.id}
                                 href={item.href}
+                                target="_blank"
                                 className={cn(
                                     "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
                                     isActive
