@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -10,37 +9,39 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String    @id @default(uuid())
   name          String
   email         String
-  emailVerified Boolean
+  emailVerified Boolean   @default(false)
   image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  products      Product[]
+  orders        Order[]
+  chats         Chat[]
 
   @@unique([email])
-  @@map("user")
+  @@map("users")
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   expiresAt DateTime
-  token     String
-  createdAt DateTime
-  updatedAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
-  @@map("session")
+  @@map("sessions")
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(uuid())
   accountId             String
   providerId            String
   userId                String
@@ -52,19 +53,90 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  @@map("account")
+  @@map("accounts")
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
 
-  @@map("verification")
+  @@map("verifications")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  stock       Int
+  category    String?
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id           String     @id @default(uuid())
+  customerName String
+  contact      String
+  shippingAddress String?
+  status       String     @default("pending")
+  total        Float
+  items        OrderItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  quantity      Int
+  priceAtPurchase Float
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Chat {
+  id           String       @id @default(uuid())
+  phoneNumber  String
+  messages     ChatMessage[]
+  status       String       @default("active")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chats")
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  from        String   // 'user' or 'bot'
+  text        String
+  isRead      Boolean  @default(false)
+  timestamp   DateTime @default(now())
+  chatId      String
+  chat        Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  suggestedProducts String[] // JSON array of product IDs
+
+  @@map("chat_messages")
 }
