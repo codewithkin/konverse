@@ -4,33 +4,33 @@ import {auth} from "@/lib/auth";
 import {headers} from "next/headers";
 
 export async function GET(
-    request: Request,
-    {params}: {params: {userId: string}}
+  request: Request,
+  {params}: {params: Promise<{userId: string}>}
 ) {
-    try {
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
 
-        if (!session || session.user.id !== params.userId) {
-            return new NextResponse("Unauthorized", {status: 401});
-        }
+    const {userId} = await params;
 
-        const userId = params.userId;
-
-        const stores = await prisma.store.findMany({
-            where: {
-                ownerId: userId,
-            },
-            select: {
-                id: true,
-                name: true,
-            },
-        });
-
-        return NextResponse.json(stores, {status: 200});
-    } catch (error) {
-        console.error("Error fetching user stores:", error);
-        return new NextResponse("Failed to fetch stores", {status: 500});
+    if (!session) {
+      return new NextResponse("Unauthorized", {status: 401});
     }
+
+    const stores = await prisma.store.findMany({
+      where: {
+        ownerId: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    return NextResponse.json(stores, {status: 200});
+  } catch (error) {
+    console.error("Error fetching user stores:", error);
+    return new NextResponse("Failed to fetch stores", {status: 500});
+  }
 }
