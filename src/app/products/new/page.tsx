@@ -9,6 +9,7 @@ import { generateReactHelpers } from "@uploadthing/react";
 import { OurFileRouter } from '@/app/api/uploadthing/core';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 // Define a type for your Store model for client-side use
 interface Store {
@@ -127,11 +128,11 @@ export default function NewProductPage() {
         onClientUploadComplete: (res: any) => {
             if (res && res.length > 0) {
                 setFormData(prev => ({ ...prev, imageUrl: res[0].url }));
-                alert("Upload Complete!");
+                toast.success("Upload Complete!");
             }
         },
         onUploadError: (error: Error) => {
-            alert(`ERROR! ${error.message}`);
+            toast.error(`ERROR! ${error.message}`);
         },
         onUploadBegin: () => {
             // Optionally handle upload begin
@@ -300,11 +301,11 @@ export default function NewProductPage() {
                                     if (res && res.length > 0) {
                                         setFormData(prev => ({ ...prev, imageUrl: res[0].url }));
                                     }
-                                    alert("Upload Completed!");
+                                    toast.success("Upload Completed!");
                                 }}
                                 onUploadError={(error: Error) => {
                                     setError(`Image upload failed: ${error.message}`);
-                                    alert(`ERROR! ${error.message}`);
+                                    toast.error(`ERROR! ${error.message}`);
                                 }}
                                 onUploadBegin={() => {
                                     // Optionally handle upload begin
