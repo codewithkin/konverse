@@ -8,6 +8,7 @@ import { UploadButton } from '@uploadthing/react';
 import { generateReactHelpers } from "@uploadthing/react";
 import { OurFileRouter } from '@/app/api/uploadthing/core';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 // Define a type for your Store model for client-side use
 interface Store {
@@ -158,7 +159,11 @@ export default function NewProductPage() {
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">No Stores Found</h2>
                 <p className="text-gray-600 mb-6">It looks like you don't have any stores yet. You need to create a store before you can add products.</p>
-                <Button onClick={() => router.push('/dashboard/create-store')} className="bg-green-600 hover:bg-green-700 text-white">Create New Store</Button>
+                <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+                    <Link href="/stores/new">
+                        Create New Store
+                    </Link>
+                </Button>
             </div>
         );
     }
