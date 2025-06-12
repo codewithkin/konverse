@@ -76,3 +76,64 @@ export async function POST(request: Request) {
     return new NextResponse("Failed to create product", {status: 500});
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session || !session.user || !session.user.id) {
+      return new NextResponse("Unauthorized", {status: 401});
+    }
+
+    const userId = session.user.id;
+    const {searchParams} = new URL(request.url);
+
+    const searchTerm = searchParams.get("search") || "";
+    const categoryFilter = searchParams.get("category") || "";
+
+    // Construct the Prisma WHERE clause based on filters
+    const whereClause: any = {
+      userId: userId, // Always filter by the current user's products
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        {name: {contains: searchTerm, mode: "insensitive"}},
+        {description: {contains: searchTerm, mode: "insensitive"}},
+      ];
+    }
+
+    if (categoryFilter) {
+      whereClause.category = categoryFilter;
+    }
+
+    const products = await prisma.product.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        stock: true,
+        category: true,
+        imageUrl: true,
+        createdAt: true,
+        _count: {
+          select: {
+            orders: true, // Count of OrderItems for this product
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc", // Order by creation date, most recent first
+      },
+    });
+
+    return NextResponse.json(products, {status: 200});
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return new NextResponse("Failed to fetch products", {status: 500});
+  }
+}
