@@ -19,7 +19,9 @@ function SignIn() {
       const { data, error } = await authClient.signIn.email(
         {
           email,
-          password
+          password,
+          rememberMe: true,
+          callbackURL: "/dashboard"
         },
         {
           onError: (ctx) => {
@@ -29,7 +31,7 @@ function SignIn() {
 
             toast.error(ctx.error.message);
           },
-        }
+        },
       );
 
       if (error) {
