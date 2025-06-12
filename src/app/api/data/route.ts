@@ -11,36 +11,57 @@ export async function GET(request: Request) {
 
     const session = data?.session;
 
-    console.log("Session: ", session);
-
     if (!session) {
       return new NextResponse("Unauthorized", {status: 401});
     }
 
     const userId = data.user.id;
 
-    // Fetch total products for the user
+    const userStores = await prisma.store.findMany({
+      where: {ownerId: userId},
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            products: true,
+            orders: true,
+          },
+        },
+      },
+    });
+
     const totalProducts = await prisma.product.count({
       where: {userId: userId},
     });
 
-    // Calculate total units in stock and low stock items
-    const products = await prisma.product.findMany({
+    const productsWithOrders = await prisma.product.findMany({
       where: {userId: userId},
       select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
         stock: true,
+        category: true,
+        imageUrl: true,
+        createdAt: true,
+        _count: {
+          select: {
+            orders: true,
+          },
+        },
       },
     });
 
-    const totalUnitsInStock = products.reduce(
+    const totalUnitsInStock = productsWithOrders.reduce(
       (sum, product) => sum + product.stock,
       0
     );
-    const lowStockItems = products.filter(
+    const lowStockItems = productsWithOrders.filter(
       (product) => product.stock < 5
     ).length;
 
-    // Fetch total orders and pending orders for the user
     const totalOrders = await prisma.order.count({
       where: {userId: userId},
     });
@@ -48,7 +69,7 @@ export async function GET(request: Request) {
     const pendingOrders = await prisma.order.count({
       where: {
         userId: userId,
-        status: "pending", // Assuming 'pending' is a status in your Order model
+        status: "pending",
       },
     });
 
@@ -58,6 +79,8 @@ export async function GET(request: Request) {
       lowStockItems,
       totalOrders,
       pendingOrders,
+      userStores,
+      productsWithOrders,
     });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
