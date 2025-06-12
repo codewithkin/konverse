@@ -1,8 +1,9 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from "next/navigation";
 
 type StatCardProps = {
     title: string;
@@ -38,6 +39,14 @@ const SpinnerIcon = () => <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-g
 function Dashboard() {
     const { data, isPending } = authClient.useSession();
     const user = data?.user;
+
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!user) {
+            router.replace("/auth/signin");
+        }
+    }, [user, router]);
 
     const { data: dashboardData, isLoading, error } = useQuery({
         queryKey: ['dashboardData', user?.id],
