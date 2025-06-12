@@ -19,7 +19,7 @@ function SignIn() {
       const { data, error } = await authClient.signIn.email(
         {
           email,
-          password,
+          password
         }
       );
 
@@ -118,7 +118,7 @@ function SignIn() {
       >
         {googleMutation.isPending ? "Signing in with Google..." : "Sign in with Google"}
       </Button>
-      <p className="text-sm font-semibold text-center text-muted-foreground">Don't have an account ? <Link className="font-semibold text-green-600" href="/auth/sign-up">Sign up</Link></p>
+      <p className="text-sm font-semibold text-center text-muted-foreground">Don't have an account ? <Link className="font-semibold text-green-600" href="/auth/signup">Sign up</Link></p>
     </section>
   )
 }
