@@ -83,49 +83,6 @@ export default function NewProductPage() {
         addProductMutation.mutate(productData);
     };
 
-    const handleGenerateDescription = async () => {
-        if (!formData.name) {
-            setError("Please enter a product name first.");
-            return;
-        }
-        setIsGenerating(true);
-        setError(null);
-
-        const prompt = `Write a short, exciting, and creative product description for an e-commerce store in Zimbabwe. The product is named '${formData.name}' and is in the category '${formData.category}'. Keep it to 1-2 sentences.`;
-
-        try {
-            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-            const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`API call failed: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
-            }
-
-            const result = await response.json();
-
-            if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                const text = result.candidates[0].content.parts[0].text;
-                setFormData(prev => ({ ...prev, description: text.trim() }));
-            } else {
-                console.error("Unexpected API response structure:", result);
-                setError("Could not generate description. Unexpected API response.");
-            }
-        } catch (error: any) {
-            console.error("Error generating description:", error);
-            setError(`Failed to generate description: ${error.message}. Please try again.`);
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
     const { startUpload } = useUploadThing("imageUploader", {
         onClientUploadComplete: (res: any) => {
             console.log("Files: ", res);
@@ -144,6 +101,7 @@ export default function NewProductPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">
+
             {error && (
                 <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-200">
                     {error}
@@ -161,9 +119,8 @@ export default function NewProductPage() {
             )}
 
             <div className="bg-white p-6 rounded-lg shadow-sm max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6">Add New Product</h1>
-
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    <h2 className='text-xl text-center font-bold'>Add a new product to your store</h2>
                     <div>
                         <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">Product Name <span className="text-red-500">*</span></label>
                         <input
@@ -200,14 +157,6 @@ export default function NewProductPage() {
                             rows={4}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         ></textarea>
-                        <Button
-                            type="button"
-                            onClick={handleGenerateDescription}
-                            disabled={isGenerating}
-                            className="mt-2 flex items-center justify-center text-sm font-semibold"
-                        >
-                            {isGenerating ? <SpinnerIcon /> : "Generate Description with AI"}
-                        </Button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -243,29 +192,42 @@ export default function NewProductPage() {
                     <div>
                         <label htmlFor="imageUrl" className="block text-sm font-bold text-gray-700 mb-2">Product Image</label>
                         <div className="flex items-center space-x-4">
-                            <input
-                                type="text"
-                                id="imageUrl"
-                                name="imageUrl"
-                                value={formData.imageUrl}
-                                onChange={handleChange}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="Or paste image URL here"
-                            />
                             <UploadButton<OurFileRouter>
                                 endpoint="imageUploader"
                                 onClientUploadComplete={(res: any) => {
+                                    console.log("Files: ", res);
                                     if (res && res.length > 0) {
                                         setFormData(prev => ({ ...prev, imageUrl: res[0].url }));
-                                        alert("Image uploaded successfully!");
                                     }
+                                    alert("Upload Completed");
                                 }}
                                 onUploadError={(error: Error) => {
                                     setError(`Image upload failed: ${error.message}`);
+                                    alert(`ERROR! ${error.message}`);
                                 }}
                                 onUploadBegin={() => {
                                     console.log("Image upload started...");
                                 }}
+                                className={`
+                                    ut-upload-btn
+                                    bg-green-600
+                                    hover:bg-green-700
+                                    text-white
+                                    font-semibold
+                                    px-5
+                                    py-2
+                                    rounded-lg
+                                    shadow
+                                    transition
+                                    duration-150
+                                    ease-in-out
+                                    focus:outline-none
+                                    focus:ring-2
+                                    focus:ring-green-400
+                                    focus:ring-offset-2
+                                    disabled:opacity-50
+                                    disabled:cursor-not-allowed
+                                `}
                             />
                         </div>
                         {formData.imageUrl && (
@@ -286,7 +248,7 @@ export default function NewProductPage() {
                         </Button>
                         <Button
                             type="submit"
-                            disabled={addProductMutation.isPending}
+                            disabled={addProductMutation.isPending || formData.name.length < 1 || formData.price.length < 0}
                             className="px-6 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         >
                             {addProductMutation.isPending && <SpinnerIcon />}
