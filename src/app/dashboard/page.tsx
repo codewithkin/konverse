@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from "next/navigation";
 
@@ -35,6 +35,7 @@ const PackageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" hei
 const ArchiveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><path d="M8 8h8" /><path d="M8 12h8" /><path d="M8 16h4" /></svg>;
 const AlertTriangleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
 const SpinnerIcon = () => <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
+const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
 
 function Dashboard() {
     const { data, isPending } = authClient.useSession();
@@ -46,7 +47,7 @@ function Dashboard() {
         if (!user && !isPending) {
             router.replace("/auth/signin");
         }
-    }, [user, router]);
+    }, [user, router, isPending]);
 
     const { data: dashboardData, isLoading, error } = useQuery({
         queryKey: ['dashboardData', user?.id],
@@ -90,8 +91,8 @@ function Dashboard() {
     const { totalProducts, totalUnitsInStock, lowStockItems, totalOrders, pendingOrders } = dashboardData || {};
 
     return (
-        <section>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">Welcome to your Store, {user?.name}!</h2>
+        <section className="relative">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Welcome to your Store, {user?.name}!</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <StatCard title="Total Products" value={totalProducts} icon={<PackageIcon />} color="blue" />
                 <StatCard title="Total Units in Stock" value={totalUnitsInStock} icon={<ArchiveIcon />} color="green" />
@@ -105,6 +106,14 @@ function Dashboard() {
                     <li>Share your new business WhatsApp number and start selling!</li>
                 </ol>
             </div>
+            <button
+                onClick={() => router.push('/products/new')}
+                className="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-colors duration-200 z-50 flex items-center justify-center"
+                aria-label="Add New Product"
+                title="Add New Product"
+            >
+                <PlusIcon />
+            </button>
         </section>
     );
 }
