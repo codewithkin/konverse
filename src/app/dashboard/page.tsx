@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +17,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // --- Icons ---
 const PackageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.5 9.4a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0z" /><path d="M16.5 9.4 21 12l-4.5 2.6" /><path d="m7.5 9.4-4.5 2.6L7.5 12" /><path d="M12 21 7.5 12 12 3l4.5 9L12 21z" /></svg>;
@@ -60,6 +68,10 @@ function Dashboard() {
     const { data, isPending: isSessionLoading } = authClient.useSession();
     const user = data?.user;
     const router = useRouter();
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 5;
 
     useEffect(() => {
         if (!user && !isSessionLoading) {
@@ -119,6 +131,12 @@ function Dashboard() {
     const hasStores = userStores && userStores.length > 0;
     const hasProducts = productsWithOrders && productsWithOrders.length > 0;
 
+    // Pagination logic
+    const totalPages = Math.ceil((productsWithOrders?.length || 0) / productsPerPage);
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const endIndex = startIndex + productsPerPage;
+    const currentProducts = productsWithOrders?.slice(startIndex, endIndex) || [];
+
     return (
         <section className="relative p-4 sm:p-6 md:p-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Welcome to your Dashboard, {user?.name}!</h2>
@@ -167,7 +185,7 @@ function Dashboard() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {productsWithOrders.map((product: any) => (
+                            {currentProducts.map((product: any) => (
                                 <TableRow key={product.id} className="hover:bg-gray-50 transition-colors">
                                     <TableCell className="py-4 px-4 font-medium text-gray-900">{product.name}</TableCell>
                                     <TableCell className="py-4 px-4 text-gray-700">${product.price.toFixed(2)}</TableCell>
@@ -198,6 +216,55 @@ function Dashboard() {
                             ))}
                         </TableBody>
                     </Table>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="mt-6 flex justify-center">
+                            <Pagination>
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setCurrentPage(prev => Math.max(1, prev - 1));
+                                            }}
+                                            aria-disabled={currentPage === 1}
+                                            tabIndex={currentPage === 1 ? -1 : undefined}
+                                            className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                                        />
+                                    </PaginationItem>
+                                    {[...Array(totalPages)].map((_, index) => (
+                                        <PaginationItem key={index}>
+                                            <PaginationLink
+                                                href="#"
+                                                isActive={currentPage === index + 1}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setCurrentPage(index + 1);
+                                                }}
+                                            >
+                                                {index + 1}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+                                    <PaginationItem>
+                                        <PaginationNext
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                                            }}
+                                            aria-disabled={currentPage === totalPages}
+                                            tabIndex={currentPage === totalPages ? -1 : undefined}
+                                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                                        />
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
+                        </div>
+                    )}
+
                     <div className="mt-6 text-center">
                         <Link href="/products/new" passHref>
                             <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center mx-auto">
