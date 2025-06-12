@@ -30,7 +30,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                 </article>
             </article>
 
-            <Card className="w-fit rounded-xl shadow-md shadow-green-200 border border-green-400 absolute right-4 bottom-10 top-10">
+            <Card className="w-fit rounded-xl shadow-md shadow-green-200 border border-green-400 absolute right-4 bottom-10 top-10 px-4 py-8">
                 <CardContent>
                     {children}
                 </CardContent>
