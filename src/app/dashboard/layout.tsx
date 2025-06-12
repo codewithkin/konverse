@@ -5,7 +5,9 @@ function DashboardLayout({ children }: { children: ReactNode }) {
     return (
         <main className='flex'>
             <Sidebar />
-            {children}
+            <article className='w-full h-full p-4'>
+                {children}
+            </article>
         </main>
     )
 }
